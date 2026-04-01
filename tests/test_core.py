@@ -6,7 +6,12 @@ import polars as pl
 import requests
 
 import allhomes_py.core as core
-from allhomes_py.core import _fetch_sales_history_json, _format_sales_data_from_json, get_past_sales_data
+from allhomes_py.core import (
+    _fetch_sales_history_json,
+    _format_sales_data_from_json,
+    get_divisions_data,
+    get_past_sales_data,
+)
 
 
 class DummyResponse:
@@ -127,6 +132,21 @@ def test_contract_date_imputed_from_list_date_and_days_on_market():
     assert dates[1] == datetime.date(2023, 3, 15)  # unchanged
     assert dates[2] is None                         # list_date is null
     assert dates[3] is None                         # days_on_market is null
+
+
+@pytest.mark.parametrize("state", ["ACT", "act", "NSW", "nsw"])
+def test_get_divisions_data_returns_dataframe_for_valid_state(state):
+    df = get_divisions_data(state)
+
+    assert isinstance(df, pl.DataFrame)
+    assert df.height > 0
+    assert {"division", "postcode"}.issubset(set(df.columns))
+
+
+@pytest.mark.parametrize("state", ["VIC", "", None])
+def test_get_divisions_data_rejects_invalid_state(state):
+    with pytest.raises(ValueError, match="`state` must be either 'ACT' or 'NSW'."):
+        get_divisions_data(state)
 
 
 @pytest.mark.parametrize("year", ["2023", 2023.0, -2023, [2021, 2022]])

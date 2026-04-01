@@ -39,6 +39,16 @@ _MAX_RETRY_ATTEMPTS = 5
 _REQUEST_TIMEOUT_SECONDS = 20
 
 
+def get_divisions_data(state: str) -> pl.DataFrame:
+    """Return suburb divisions data for the requested state (ACT or NSW)."""
+    normalized_state = state.upper() if isinstance(state, str) else None
+    if normalized_state not in {"ACT", "NSW"}:
+        raise ValueError("`state` must be either 'ACT' or 'NSW'.")
+
+    csv_file = _DATA_DIR / f"divisions_{normalized_state}.csv"
+    return pl.read_csv(csv_file)
+
+
 def get_past_sales_data(suburb: str, year: Optional[int] = None, max_entries: int = 5000) -> pl.DataFrame:
     """Retrieve past sales data for an ACT/NSW suburb from Allhomes."""
     if year is not None and (not isinstance(year, int) or isinstance(year, bool) or year <= 0):
