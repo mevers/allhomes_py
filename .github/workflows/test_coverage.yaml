@@ -25,12 +25,12 @@ jobs:
       - name: Install dependencies
         run: |
           python -m pip install --upgrade pip
-          pip install .
+          pip install -e .
           pip install pytest pytest-cov
 
       - name: Run tests with coverage
         run: |
-          pytest --cov=allhomes_py --cov-report=xml
+          python -m pytest --cov=./allhomes_py --cov-config=.coveragerc --cov-report=xml --cov-report=term-missing tests/test_core.py
 
       - name: Upload coverage to Codecov
         uses: codecov/codecov-action@v5
