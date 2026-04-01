@@ -1,0 +1,26 @@
+[build-system]
+requires = ["setuptools>=61.0", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "allhomes_py"
+version = "0.1.0"
+description = "Python package for extracting historical Allhomes past sales data for ACT/NSW suburbs."
+readme = "README.md"
+requires-python = ">=3.9"
+dependencies = [
+    "polars>=0.18.0",
+    "requests>=2.28.0"
+]
+authors = [
+    {name = "Maurits Evers", email = "maurits.evers@gmail.com"}
+]
+classifiers = [
+    "Programming Language :: Python :: 3",
+    "License :: OSI Approved :: MIT License",
+    "Operating System :: OS Independent"
+]
+
+[tool.setuptools.packages.find]
+where = ["allhomes_py"]
+include = ["allhomes_py"]
