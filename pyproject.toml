@@ -24,3 +24,6 @@ classifiers = [
 [tool.setuptools.packages.find]
 where = ["."]
 include = ["allhomes_py*"]
+
+[tool.setuptools.package-data]
+allhomes_py = ["_data/*.csv"]
