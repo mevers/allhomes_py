@@ -134,6 +134,44 @@ def test_contract_date_imputed_from_list_date_and_days_on_market():
     assert dates[3] is None                         # days_on_market is null
 
 
+def test_building_and_block_size_are_parsed_as_float_robustly():
+    json_data = {
+        "data": {
+            "historyForLocality": {
+                "nodes": [
+                    {"features": {"buildingSize": "120.5"}, "transfer": {"blockSize": "1,234"}},
+                    {"features": {"buildingSize": "90m2"}, "transfer": {"blockSize": 77}},
+                    {"features": {"buildingSize": None}, "transfer": {"blockSize": "unknown"}},
+                ]
+            }
+        }
+    }
+
+    df = _format_sales_data_from_json(json_data)
+
+    assert df["building_size"].to_list() == [120.5, 90.0, None]
+    assert df["block_size"].to_list() == [1234.0, 77.0, None]
+
+
+def test_unimproved_value_ratio_is_parsed_as_float_robustly():
+    json_data = {
+        "data": {
+            "historyForLocality": {
+                "nodes": [
+                    {"transfer": {"unimprovedValueRatio": "1.25"}},
+                    {"transfer": {"unimprovedValueRatio": "2,500.75"}},
+                    {"transfer": {"unimprovedValueRatio": "ratio=3.5x"}},
+                    {"transfer": {"unimprovedValueRatio": "n/a"}},
+                ]
+            }
+        }
+    }
+
+    df = _format_sales_data_from_json(json_data)
+
+    assert df["unimproved_value_ratio"].to_list() == [1.25, 2500.75, 3.5, None]
+
+
 @pytest.mark.parametrize("state", ["ACT", "act", "NSW", "nsw"])
 def test_get_divisions_data_returns_dataframe_for_valid_state(state):
     df = get_divisions_data(state)

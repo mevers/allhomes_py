@@ -252,12 +252,27 @@ def _format_sales_data_from_json(json_data: dict) -> pl.DataFrame:
             )
         return None
 
+    def parse_float(column_name: str):
+        if column_name in df.columns:
+            # Support plain numbers and strings with units/separators like "1,234m2".
+            return (
+                pl.col(column_name)
+                .cast(pl.Utf8)
+                .str.replace_all(",", "")
+                .str.extract(r"(-?\d+(?:\.\d+)?)", 1)
+                .cast(pl.Float64, strict=False)
+                .alias(column_name)
+            )
+        return None
+
     df = df.with_columns([
         parse_date("contract_date"),
         parse_date("list_date"),
         parse_date("transfer_date"),
+        parse_float("building_size"),
+        parse_float("block_size"),
         pl.col("unimproved_value").cast(pl.Int64, strict=False),
-        pl.col("unimproved_value_ratio").cast(pl.Float64, strict=False),
+        parse_float("unimproved_value_ratio"),
         pl.col("price").cast(pl.Int64, strict=False),
     ])
 
