@@ -18,3 +18,11 @@ print(sales)
 ```bash
 pip install git+https://github.com/mevers/allhomes_py.git
 ```
+
+## Contributing
+
+Please report bugs and request features on [GitHub](https://github.com/mevers/allhomes_py/issues). Pull requests are welcome!
+
+## Disclaimer
+
+This package is not affiliated with or endorsed by [allhomes.com.au](https://www.allhomes.com.au/). Functions may break if the website changes its data format. Historical data may also be updated or removed by Allhomes. All data provided are subject to the [Domain General Terms and Conditions](https://www.domain.com.au/group/domain-general-terms-and-conditions/).
