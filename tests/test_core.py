@@ -172,6 +172,37 @@ def test_unimproved_value_ratio_is_parsed_as_float_robustly():
     assert df["unimproved_value_ratio"].to_list() == [1.25, 2500.75, 3.5, None]
 
 
+def test_zero_like_numeric_values_are_converted_to_null():
+    json_data = {
+        "data": {
+            "historyForLocality": {
+                "nodes": [
+                    {
+                        "features": {"buildingSize": "120.5", "parking": {"total": 2}},
+                        "transfer": {"price": 500000, "blockSize": "100", "unimprovedValue": 250000},
+                    },
+                    {
+                        "features": {"buildingSize": "0.0", "parking": {"total": 0}},
+                        "transfer": {"price": 0, "blockSize": 0, "unimprovedValue": "0"},
+                    },
+                    {
+                        "features": {"buildingSize": None, "parking": {"total": None}},
+                        "transfer": {"price": None, "blockSize": None, "unimprovedValue": None},
+                    },
+                ]
+            }
+        }
+    }
+
+    df = _format_sales_data_from_json(json_data)
+
+    assert df["building_size"].to_list() == [120.5, None, None]
+    assert df["block_size"].to_list() == [100.0, None, None]
+    assert df["price"].to_list() == [500000, None, None]
+    assert df["unimproved_value"].to_list() == [250000, None, None]
+
+
+
 @pytest.mark.parametrize("state", ["ACT", "act", "NSW", "nsw"])
 def test_get_divisions_data_returns_dataframe_for_valid_state(state):
     df = get_divisions_data(state)

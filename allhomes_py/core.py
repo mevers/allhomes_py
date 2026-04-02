@@ -255,12 +255,25 @@ def _format_sales_data_from_json(json_data: dict) -> pl.DataFrame:
     def parse_float(column_name: str):
         if column_name in df.columns:
             # Support plain numbers and strings with units/separators like "1,234m2".
+            # Convert 0-like values to NULL.
             return (
                 pl.col(column_name)
                 .cast(pl.Utf8)
                 .str.replace_all(",", "")
                 .str.extract(r"(-?\d+(?:\.\d+)?)", 1)
                 .cast(pl.Float64, strict=False)
+                .map_elements(lambda x: None if x == 0.0 else x, return_dtype=pl.Float64)
+                .alias(column_name)
+            )
+        return None
+
+    def parse_int(column_name: str):
+        if column_name in df.columns:
+            # Convert 0-like values to NULL.
+            return (
+                pl.col(column_name)
+                .cast(pl.Int64, strict=False)
+                .map_elements(lambda x: None if x == 0 else x, return_dtype=pl.Int64)
                 .alias(column_name)
             )
         return None
@@ -271,9 +284,10 @@ def _format_sales_data_from_json(json_data: dict) -> pl.DataFrame:
         parse_date("transfer_date"),
         parse_float("building_size"),
         parse_float("block_size"),
-        pl.col("unimproved_value").cast(pl.Int64, strict=False),
         parse_float("unimproved_value_ratio"),
-        pl.col("price").cast(pl.Int64, strict=False),
+        parse_int("unimproved_value"),
+        parse_int("price"),
+        parse_int("days_on_market"),
     ])
 
     # Impute missing contract_date as list_date + days_on_market when both are available.
@@ -283,7 +297,10 @@ def _format_sales_data_from_json(json_data: dict) -> pl.DataFrame:
             & pl.col("list_date").is_not_null()
             & pl.col("days_on_market").is_not_null()
         )
-        .then(pl.col("list_date") + pl.duration(days=pl.col("days_on_market").cast(pl.Int32, strict=False)))
+        .then(
+            pl.col("list_date")
+            + pl.duration(days=pl.col("days_on_market"))
+        )
         .otherwise(pl.col("contract_date"))
         .alias("contract_date")
     )
