@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "allhomes_py"
-version = "0.2.1"
+version = "0.3.0"
 license = "MIT"
 description = "Python package for extracting historical Allhomes past sales data for ACT/NSW suburbs."
 readme = "README.md"
