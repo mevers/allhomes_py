@@ -29,6 +29,23 @@ def _load_postcode_map(csv_path: Path) -> dict[str, str]:
 
 _DIVISIONS_ACT = _load_postcode_map(_DATA_DIR / "divisions_ACT.csv")
 _DIVISIONS_NSW = _load_postcode_map(_DATA_DIR / "divisions_NSW.csv")
+_SA_NAMES = (
+    pl.concat(
+        [
+            pl.read_csv(_DATA_DIR / "divisions_ACT.csv"),
+            pl.read_csv(_DATA_DIR / "divisions_NSW.csv"),
+        ],
+        how="vertical_relaxed",
+    )
+    .with_columns([
+        pl.col("division").cast(pl.Utf8).str.to_lowercase().alias("division_key"),
+        pl.col("state").cast(pl.Utf8).str.to_uppercase().alias("state_key"),
+        pl.col("sa3_name").cast(pl.Utf8),
+        pl.col("sa4_name").cast(pl.Utf8),
+    ])
+    .select(["division_key", "state_key", "sa3_name", "sa4_name"])
+    .unique()
+)
 _MAX_ENTRIES = 5000
 _GRAPHQL_URL = "https://www.allhomes.com.au/graphql"
 _PERSISTED_HASH = (
@@ -59,6 +76,7 @@ def get_past_sales_data(suburb: str, year: Optional[int] = None, max_entries: in
     slug = _format_slug(suburb)
     json_data = _fetch_sales_history_json(page=1, page_size=max_entries, slug=slug, year=year)
     df = _format_sales_data_from_json(json_data)
+    df = _add_sa_names(df)
 
     if df.height == max_entries:
         warnings.warn("Truncated data. Increase `max_entries` or rerun query in year batches!", UserWarning)
@@ -87,6 +105,24 @@ def _validate_suburb(suburb: str) -> tuple[str, str, Optional[str]]:
         )
 
     return division, state, postcode
+
+
+def _add_sa_names(df: pl.DataFrame) -> pl.DataFrame:
+    """Add SA3 and SA4 names to a sales DataFrame using division and state."""
+    if "sa3_name" in df.columns and "sa4_name" in df.columns:
+        return df
+
+    if "division" not in df.columns or "state" not in df.columns:
+        return df
+
+    return (
+        df.with_columns([
+            pl.col("division").cast(pl.Utf8).str.to_lowercase().alias("division_key"),
+            pl.col("state").cast(pl.Utf8).str.to_uppercase().alias("state_key"),
+        ])
+        .join(_SA_NAMES, on=["division_key", "state_key"], how="left")
+        .drop(["division_key", "state_key"])
+    )
 
 
 def _format_slug(suburb: str) -> str:

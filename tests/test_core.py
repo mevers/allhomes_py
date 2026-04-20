@@ -245,6 +245,33 @@ def test_get_past_sales_data_rejects_unknown_suburb():
         get_past_sales_data("NotARealSuburb, NSW")
 
 
+def test_get_past_sales_data_includes_sa3_and_sa4_names(monkeypatch):
+    json_data = {
+        "data": {
+            "historyForLocality": {
+                "nodes": [
+                    {
+                        "address": {
+                            "line1": "1 Example Street",
+                            "division": {"name": "Abbotsford"},
+                            "state": {"abbreviation": "NSW"},
+                            "postcode": "2046",
+                        },
+                        "transfer": {"price": 1000000},
+                    }
+                ]
+            }
+        }
+    }
+
+    monkeypatch.setattr(core, "_fetch_sales_history_json", lambda **_kwargs: json_data)
+
+    df = get_past_sales_data("Abbotsford, NSW")
+
+    assert df["sa3_name"].to_list() == ["Strathfield - Burwood - Ashfield"]
+    assert df["sa4_name"].to_list() == ["Sydney - Inner West"]
+
+
 def test_fetch_retries_transient_status_then_succeeds():
     responses = [
         DummyResponse(status_code=429, payload={}),
