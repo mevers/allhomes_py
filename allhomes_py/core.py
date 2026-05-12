@@ -16,15 +16,13 @@ import requests
 _DATA_DIR = Path(__file__).resolve().parent / "_data"
 
 
-def _load_postcode_map(csv_path: Path) -> dict[str, str]:
-    """Return a lowercase-division → postcode mapping built from the given CSV."""
+def _load_postcode_map(csv_path: Path) -> dict[str, list[str]]:
+    """Return a lowercase-division → postcodes mapping built from the given CSV."""
     rows = pl.read_csv(csv_path)
-    return {
-        name.lower(): str(code)
-        for name, code in zip(
-            rows["division"].to_list(), rows["postcode"].to_list()
-        )
-    }
+    postcode_map = {}
+    for name, code in zip(rows["division"].to_list(), rows["postcode"].to_list()):
+        postcode_map.setdefault(name.lower(), []).append(str(code))
+    return postcode_map
 
 
 _DIVISIONS_ACT = _load_postcode_map(_DATA_DIR / "divisions_ACT.csv")
@@ -89,7 +87,7 @@ def get_past_sales_data(suburb: str, year: Optional[int] = None, max_entries: in
 def _validate_suburb(suburb: str) -> tuple[str, str, Optional[str]]:
     """Parse and validate a suburb string; return (division, state, postcode)."""
     parts = [segment.strip() for segment in suburb.split(",")]
-    if len(parts) != 2:
+    if len(parts) not in {2, 3}:
         raise ValueError("`suburb` must contain name and state abbreviation separated by a comma")
 
     division, state = parts[0], parts[1].lower()
@@ -97,13 +95,37 @@ def _validate_suburb(suburb: str) -> tuple[str, str, Optional[str]]:
         raise ValueError("Currently only data for ACT and NSW suburbs are available")
 
     lookup = _DIVISIONS_ACT if state == "act" else _DIVISIONS_NSW
-    postcode = lookup.get(division.lower())
-    if not postcode:
+    postcodes = lookup.get(division.lower())
+    if not postcodes:
         raise ValueError(
             f"Could not validate suburb '{suburb}'. "
             "Could not find a matching postcode."
         )
 
+    if len(parts) == 3:
+        postcode = parts[2]
+        if postcode not in postcodes:
+            valid_postcodes = ", ".join(postcodes)
+            raise ValueError(
+                f"Could not validate suburb '{suburb}'. "
+                f"Valid postcodes for {division}, {state.upper()} are: {valid_postcodes}."
+            )
+        return division, state, postcode
+
+    if len(postcodes) > 1:
+        valid_postcodes = ", ".join(postcodes)
+        warnings.warn(
+            f"Suburb '{division}, {state.upper()}' matches multiple postcodes "
+            f"({valid_postcodes}). Specify a postcode, for example: "
+            f"'{division}, {state.upper()}, {postcodes[0]}'.",
+            UserWarning,
+        )
+        raise ValueError(
+            f"Could not validate suburb '{suburb}'. "
+            "Multiple matching postcodes were found."
+        )
+
+    postcode = postcodes[0]
     return division, state, postcode
 
 
