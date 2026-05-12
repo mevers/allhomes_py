@@ -245,6 +245,29 @@ def test_get_past_sales_data_rejects_unknown_suburb():
         get_past_sales_data("NotARealSuburb, NSW")
 
 
+def test_format_slug_accepts_unique_suburb_without_postcode():
+    assert core._format_slug("Curtin, ACT") == "curtin-act-2605"
+
+
+def test_format_slug_accepts_unique_suburb_with_postcode():
+    assert core._format_slug("Curtin, ACT, 2605") == "curtin-act-2605"
+
+
+def test_format_slug_rejects_ambiguous_suburb_without_postcode():
+    with pytest.warns(UserWarning, match="Specify a postcode"):
+        with pytest.raises(ValueError, match="Multiple matching postcodes"):
+            core._format_slug("Mayfield, NSW")
+
+
+def test_format_slug_accepts_ambiguous_suburb_with_postcode():
+    assert core._format_slug("Mayfield, NSW, 2304") == "mayfield-nsw-2304"
+
+
+def test_format_slug_rejects_invalid_postcode_for_suburb():
+    with pytest.raises(ValueError, match="Valid postcodes"):
+        core._format_slug("Mayfield, NSW, 9999")
+
+
 def test_get_past_sales_data_includes_sa3_and_sa4_names(monkeypatch):
     json_data = {
         "data": {
