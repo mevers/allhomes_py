@@ -38,10 +38,11 @@ _SA_NAMES = (
     .with_columns([
         pl.col("division").cast(pl.Utf8).str.to_lowercase().alias("division_key"),
         pl.col("state").cast(pl.Utf8).str.to_uppercase().alias("state_key"),
+        pl.col("postcode").cast(pl.Utf8).alias("postcode_key"),
         pl.col("sa3_name").cast(pl.Utf8),
         pl.col("sa4_name").cast(pl.Utf8),
     ])
-    .select(["division_key", "state_key", "sa3_name", "sa4_name"])
+    .select(["division_key", "state_key", "postcode_key", "sa3_name", "sa4_name"])
     .unique()
 )
 _MAX_ENTRIES = 5000
@@ -130,20 +131,21 @@ def _validate_suburb(suburb: str) -> tuple[str, str, Optional[str]]:
 
 
 def _add_sa_names(df: pl.DataFrame) -> pl.DataFrame:
-    """Add SA3 and SA4 names to a sales DataFrame using division and state."""
+    """Add SA3 and SA4 names to a sales DataFrame using division, state, and postcode."""
     if "sa3_name" in df.columns and "sa4_name" in df.columns:
         return df
 
-    if "division" not in df.columns or "state" not in df.columns:
+    if "division" not in df.columns or "state" not in df.columns or "postcode" not in df.columns:
         return df
 
     return (
         df.with_columns([
             pl.col("division").cast(pl.Utf8).str.to_lowercase().alias("division_key"),
             pl.col("state").cast(pl.Utf8).str.to_uppercase().alias("state_key"),
+            pl.col("postcode").cast(pl.Utf8).alias("postcode_key"),
         ])
-        .join(_SA_NAMES, on=["division_key", "state_key"], how="left")
-        .drop(["division_key", "state_key"])
+        .join(_SA_NAMES, on=["division_key", "state_key", "postcode_key"], how="left")
+        .drop(["division_key", "state_key", "postcode_key"])
     )
 
 

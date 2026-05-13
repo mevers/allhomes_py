@@ -295,6 +295,32 @@ def test_get_past_sales_data_includes_sa3_and_sa4_names(monkeypatch):
     assert df["sa4_name"].to_list() == ["Sydney - Inner West"]
 
 
+def test_add_sa_names_joins_on_division_state_and_postcode():
+    df = pl.DataFrame(
+        {
+            "division": ["Mayfield", "Mayfield", "Mayfield", "Mayfield"],
+            "state": ["NSW", "NSW", "NSW", "NSW"],
+            "postcode": ["2304", "2540", "2580", "2787"],
+        }
+    )
+
+    result = core._add_sa_names(df)
+
+    assert result.height == 4
+    assert result["sa3_name"].to_list() == [
+        "Newcastle",
+        "Jervis Bay",
+        "Blue Mountains - South",
+        "Penrith",
+    ]
+    assert result["sa4_name"].to_list() == [
+        "Newcastle and Lake Macquarie",
+        "Other Territories",
+        "Sydney - Outer West and Blue Mountains",
+        "Sydney - Outer West and Blue Mountains",
+    ]
+
+
 def test_fetch_retries_transient_status_then_succeeds():
     responses = [
         DummyResponse(status_code=429, payload={}),

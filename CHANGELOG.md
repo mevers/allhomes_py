@@ -2,6 +2,11 @@
 
 All notable changes to this project are documented in this file.
 
+## v0.3.3 (2026-05-14)
+
+- Fixed `sa3_name` and `sa4_name` enrichment to join on division, state, and postcode, preventing incorrect matches and duplicate rows for ambiguous suburb names such as `Mayfield, NSW`.
+- Added regression coverage for ambiguous suburb SA3/SA4 joins.
+
 ## v0.3.2 (2026-05-12)
 
 - Added support for optional postcode values in suburb strings, e.g. `Mayfield, NSW, 2304`.
